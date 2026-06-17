@@ -1,34 +1,3 @@
-"""
-
-This module provides two implementations of the Boyer-Moore algorithm:
-  Method 1 - Bad Character Heuristic only
-  Method 2 - Bad Character + Good Suffix Heuristic (full algorithm)
-
-Both methods are tested on identical inputs so that their results and
-comparison counts can be contrasted.
-
-HOW BOYER-MOORE WORKS (Overview):
-  Unlike naive search which checks every position left-to-right, Boyer-Moore
-  compares characters RIGHT-TO-LEFT within each alignment. When a mismatch
-  happens, it uses clever rules to skip ahead — often jumping over large
-  chunks of text without checking them at all.
-
-  Two "skip rules" (heuristics) are used:
-    1. Bad Character  — looks at the mismatched text character and asks:
-       "Where does this character last appear in my pattern?"
-    2. Good Suffix    — looks at the part that already matched and asks:
-       "Does this matched part appear elsewhere in my pattern?"
-
-  The algorithm picks whichever rule gives the BIGGER skip.
-
-Time Complexity:
-  - Best / Average : O(n / m)  — skips large chunks, very efficient
-  - Worst case     : O(n * m)  — rare, happens with highly repetitive text
-  - Preprocessing  : O(m + 256) — one-time cost to build lookup tables
-  (n = length of text, m = length of pattern)
-
-"""
-
 # There are 256 possible characters in the extended ASCII table (0 to 255).
 # We create a table with one slot per character.
 NO_OF_CHARS = 256
@@ -39,26 +8,12 @@ def bad_char_heuristic(pattern):
     """
     Build the bad character table.
 
-    WHAT THIS TABLE ANSWERS:
-      "For any character, what is the LAST position where it appears in the pattern?"
-
-    WHY THIS IS USEFUL:
       When a mismatch occurs, we look at the text character that caused it.
       - If that character EXISTS in the pattern → slide the pattern so that
         its last occurrence lines up with the mismatched position.
       - If that character does NOT exist in the pattern → we get -1,
         which means we can skip the entire pattern past that position.
 
-    EXAMPLE:
-      pattern = "ABCD"
-        table['A'] = 0   (A last appears at position 0)
-        table['B'] = 1   (B last appears at position 1)
-        table['C'] = 2   (C last appears at position 2)
-        table['D'] = 3   (D last appears at position 3)
-        table[any other character] = -1   (not in pattern → big skip)
-
-    Time:  O(m + 256)  where m = length of pattern
-    Space: O(256)      one slot per possible ASCII character
     """
     # Start with -1 for all 256 characters (meaning "not found in pattern")
     table = [-1] * NO_OF_CHARS
@@ -78,30 +33,15 @@ def good_suffix_preprocess(pattern):
     """
     Build the good suffix shift table.
 
-    WHAT THIS TABLE ANSWERS:
-      "After some characters at the end of the pattern have matched (the 'good suffix'),
-       but then a mismatch occurs — how far can we safely slide the pattern forward?"
-
-    TWO CASES ARE HANDLED:
-
       Case 1 — Strong Good Suffix:
         The matched suffix appears AGAIN somewhere else inside the pattern,
         and the character just BEFORE that other occurrence is DIFFERENT from
         the mismatched character. We slide the pattern to align that copy.
 
-        Example: pattern = "ABCABC"
-          If we matched "ABC" at the end and hit a mismatch, we can slide
-          the pattern to align the first "ABC" with the text.
-
       Case 2 — Matching Prefix (fallback):
         The matched suffix does NOT appear elsewhere, but the BEGINNING
         of the pattern matches the END of the good suffix.
         We slide the pattern to align that matching prefix.
-
-        Example: pattern = "ABAABA"
-          If we matched "ABA" at the end but can't find another "ABA",
-          we check: does the pattern start with "A" or "ABA"? If yes,
-          align that prefix with the text.
 
     HOW IT WORKS INTERNALLY:
       - border[i] tracks where the suffix starting at position i also appears
@@ -109,8 +49,6 @@ def good_suffix_preprocess(pattern):
       - shift[j] stores the final answer: how far to slide the pattern when
         a mismatch occurs at position j.
 
-    Time:  O(m)
-    Space: O(m)
     """
     m = len(pattern)
     shift = [0] * (m + 1)      # shift[j]: how far to slide when mismatch at position j-1
@@ -170,8 +108,6 @@ def bm_bad_char_only(text, pattern):
       matches     - list of starting positions where pattern was found
       comparisons - total number of character comparisons made
 
-    Preprocessing : O(m + 256)
-    Search        : O(n*m) worst case, O(n/m) best/average case
     """
     n = len(text)
     m = len(pattern)
@@ -225,15 +161,13 @@ def bm_full(text, pattern):
 
     This is the complete algorithm. When a mismatch occurs, it calculates
     two possible shifts (one from each heuristic) and picks the LARGER one.
-    This is what makes Boyer-Moore so efficient — it always skips as far
+    This is what makes Boyer-Moore so efficient as it always skips as far
     ahead as it safely can.
 
     Returns:
       matches     - list of starting positions where pattern was found
       comparisons - total number of character comparisons made
 
-    Preprocessing : O(m + 256)
-    Search        : O(n) worst case (with good suffix), O(n/m) best/average case
     """
     n = len(text)
     m = len(pattern)
@@ -320,7 +254,7 @@ if __name__ == "__main__":
     print(f"  Full BM    -> matches {r3b}, comparisons = {c3b}")
 
     # Test 4: pattern does not exist in text
-    text4    = ""
+    text4    = "A BROWN CAT JUMPS OVER A DOG"
     pattern4 = "ZEBRA"
     r4a, c4a = bm_bad_char_only(text4, pattern4)
     r4b, c4b = bm_full(text4, pattern4)
